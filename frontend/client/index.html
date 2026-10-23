@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NGOConnect</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="icon" type="image/svg+xml" href="/logo.png">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        /* Basic Body Styling */
+        body {
+            font-family: 'Poppins', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #eef5fb; /* Light blue-gray background */
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Floating Chatbot Button */
+        .chatbot-btn {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background-color: #4a90e2; /* Light blue */
+            color: #ffffff; /* White text/icon */
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 4px 12px rgba(74, 144, 226, 0.3);
+            transition: transform 0.3s ease, background-color 0.3s ease, box-shadow 0.3s ease;
+            z-index: 1000;
+            animation: pulse 2s infinite;
+        }
+
+        .chatbot-btn:hover {
+            transform: scale(1.1);
+            background-color: #357abd; /* Darker light blue on hover */
+            box-shadow: 0 6px 16px rgba(74, 144, 226, 0.4);
+        }
+
+        /* Chatbot Popup */
+        .chat-popup {
+            position: fixed;
+            bottom: 90px;
+            right: 20px;
+            width: 90%;
+            max-width: 360px;
+            height: 70vh;
+            max-height: 500px;
+            background-color: #ffffff;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            display: none;
+            flex-direction: column;
+            overflow: hidden;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.4s ease, transform 0.4s ease;
+            z-index: 999;
+            animation: fadeIn 0.5s ease forwards;
+        }
+
+        .chat-popup.active {
+            display: flex;
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .chat-header {
+            background-color: #4a90e2; /* Light blue header */
+            color: #ffffff; /* White text */
+            padding: 12px 15px;
+            font-size: 18px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: relative;
+            border-radius: 10px 10px 0 0;
+        }
+
+        .chat-header .bot-profile {
+            display: flex;
+            align-items: center;
+        }
+
+        .chat-header .bot-icon {
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            color: #4a90e2; /* Light blue icon */
+            background-color: #ffffff; /* White background */
+            margin-right: 8px;
+            border-radius: 50%;
+            border: 2px solid #eef5fb;
+            animation: rotate 4s infinite linear;
+        }
+
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            background-color: #27ae60; /* Green for active status */
+            border-radius: 50%;
+            margin-left: 8px;
+            box-shadow: 0 0 5px rgba(39, 174, 96, 0.7);
+            animation: pulseDot 1.5s infinite;
+        }
+
+        .chat-close {
+            background: transparent;
+            color: #ffffff; /* White close icon */
+            border: none;
+            padding: 5px 10px;
+            cursor: pointer;
+            font-size: 20px;
+            transition: color 0.3s ease, transform 0.3s ease;
+        }
+
+        .chat-close:hover {
+            color: #e74c3c; /* Red on hover */
+            transform: rotate(90deg);
+        }
+
+        .chat-container {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            background-color: #f8fbfd; /* Very light blue for container */
+            overflow-y: auto;
+            border: none;
+        }
+
+        .chat-box {
+            padding: 15px;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .chat-message {
+            margin: 0;
+            padding: 12px 15px;
+            border-radius: 8px;
+            line-height: 1.6;
+            font-size: 14px;
+            animation: bounceIn 0.5s ease-out;
+            max-width: 80%;
+            word-wrap: break-word;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            transition: transform 0.2s ease, opacity 0.2s ease;
+        }
+
+        .chat-message.bot-message {
+            background-color: #e6f0fa; /* Light blue for bot messages */
+            border-radius: 8px 8px 8px 0;
+            color: #2c5777; /* Darker blue text */
+            align-self: flex-start;
+            display: flex;
+            align-items: flex-start;
+        }
+
+        .chat-message.user-message {
+            background-color: #4a90e2; /* Light blue for user messages */
+            border-radius: 8px 8px 0 8px;
+            color: #ffffff; /* White text */
+            align-self: flex-end;
+            text-align: left;
+            font-weight: 500;
+            display: flex;
+            align-items: flex-start;
+        }
+
+        .chat-message p {
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .chat-message:hover {
+            transform: scale(1.02);
+            opacity: 0.95;
+        }
+
+        .chat-message.button-message {
+            background-color: #e6f0fa; /* Light blue */
+            border: 1px solid #4a90e2; /* Light blue border */
+            color: #2c5777; /* Darker blue text */
+            cursor: pointer;
+            border-radius: 8px;
+            padding: 10px 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 500;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            animation: bounce 0.5s ease-out;
+        }
+
+        .chat-message.button-message:hover {
+            background-color: #d0e1f1; /* Lighter blue on hover */
+            transform: translateY(-2px) scale(1.05);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .categories {
+            padding: 8px 12px 12px; /* Reduced top padding to move text upwards */
+            gap: 10px;
+            background-color: #f8fbfd; /* Match container background */
+            max-height: 200px;
+            overflow-y: auto;
+            min-height: 60px;
+            border: none;
+            box-shadow: none;
+        }
+
+        .categories p {
+            margin: 0 0 10px 0;
+            font-size: 14px;
+            color: #2c5777; /* Darker blue text */
+        }
+
+        .btn {
+            padding: 10px 12px;
+            background-color: #e6f0fa; /* Light blue */
+            color: #2c5777; /* Darker blue text */
+            border: 1px solid #4a90e2; /* Light blue border */
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            animation: bounce 0.5s ease-out;
+            margin-bottom: 8px; /* Add space between category buttons */
+        }
+
+        .btn:hover {
+            background-color: #d0e1f1; /* Lighter blue on hover */
+            transform: translateY(-2px) scale(1.05);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Responsive Adjustments */
+        @media (max-width: 400px) {
+            .chat-popup {
+                width: 90%;
+                max-width: 320px;
+                height: 60vh;
+                max-height: 450px;
+                bottom: 80px;
+                right: 10px;
+            }
+
+            .chatbot-btn {
+                width: 50px;
+                height: 50px;
+                font-size: 20px;
+                bottom: 15px;
+                right: 15px;
+            }
+
+            .chat-header {
+                font-size: 16px;
+                padding: 10px;
+            }
+
+            .chat-container {
+                padding: 10px;
+            }
+
+            .chat-message {
+                font-size: 13px;
+                padding: 10px 12px;
+            }
+
+            .chat-message.button-message {
+                font-size: 12px;
+                padding: 8px 12px;
+            }
+
+            .categories {
+                padding: 6px 8px 10px; /* Further reduced padding for mobile */
+                max-height: 180px;
+                min-height: 50px;
+            }
+
+            .btn {
+                font-size: 12px;
+                padding: 8px 10px;
+                margin-bottom: 6px; /* Adjusted space for mobile */
+            }
+        }
+
+        /* Keyframe Animations */
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        @keyframes pulseDot {
+            0% { transform: scale(1); box-shadow: 0 0 5px rgba(39, 174, 96, 0.7); }
+            50% { transform: scale(1.2); box-shadow: 0 0 10px rgba(39, 174, 96, 1); }
+            100% { transform: scale(1); box-shadow: 0 0 5px rgba(39, 174, 96, 0.7); }
+        }
+
+        @keyframes rotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes bounceIn {
+            0% { transform: scale(0.8); opacity: 0; }
+            50% { transform: scale(1.1); opacity: 0.5; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        @keyframes bounce {
+            0% { transform: translateY(0); }
+            50% { transform: translateY(-5px); }
+            100% { transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+    <button class="chatbot-btn" onclick="toggleChat()"><i class="fas fa-robot"></i></button>
+
+    <div class="chat-popup" id="chatPopup">
+        <div class="chat-header">
+            <div class="bot-profile">
+                <div class="bot-icon"><i class="fas fa-robot"></i></div>
+                <span>NGO Chatbot</span>
+                <div class="status-dot"></div>
+            </div>
+            <button class="chat-close" onclick="toggleChat()"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="chat-container">
+            <div class="chat-box" id="chatBox"></div>
+            <div class="categories" id="categories"></div>
+        </div>
+    </div>
+
+    <script>
+        function toggleChat() {
+            const chatPopup = document.getElementById("chatPopup");
+            chatPopup.classList.toggle('active');
+        }
+
+        // Function to hide chatbot on specific page
+        function hideChatbotOnPage() {
+            const currentPage = window.location.pathname; // Get current page URL
+            const hideOnPage = '/about'; // Define the page where chatbot should disappear
+            const hideOnPages = ['/about', '/login', '/chat']; // Define multiple pages to hide chatbot
+
+            if (currentPage === hideOnPage) {
+                document.querySelector('.chatbot-btn').style.display = 'none';
+                document.querySelector('.chat-popup').style.display = 'none';
+            }
+        }
+
+        // Call the function when the page loads
+        window.onload = function() {
+            hideChatbotOnPage(); // Hide chatbot if on the specified page
+            showWelcomeMessage(); // Initialize chatbot if not hidden
+        };
+
+        const faqData = {
+            Overview: {
+                icon: "fas fa-info-circle", // General info icon
+                questions: [
+                    { question: "What is this platform about?", answer: "This platform connects NGOs to share resources and collaborate." },
+                    { question: "How does this platform help NGOs?", answer: "It helps NGOs find and share resources, collaborate, and receive donations." },
+                    { question: "Is this platform available worldwide?", answer: "Yes, NGOs from any country can join and collaborate." },
+                ]
+            },
+            NgoRegistrationVerification: {
+                icon: "fas fa-user-check", // Verification icon
+                questions: [
+                    { question: "How can my NGO register on this platform?", answer: "You can register by filling out the registration form on our website." },
+                    { question: "What documents are required for verification?", answer: "NGOs need to provide their License number when filing the registration form." },
+                    { question: "Can an individual register without an NGO?", answer: "Yes, individuals can register and donate resources." },
+                ]
+            },
+            ResourceSharing: {
+                icon: "fas fa-exchange-alt", // Resource exchange icon
+                questions: [
+                    { question: "What types of resources can be shared?", answer: "NGOs can exchange stationery, clothes, and medical supplies." },
+                    { question: "How do NGOs request resources?", answer: "They can browse available resources and submit a request." },
+                    { question: "Is there a minimum requirement for sharing the resources?", answer: "No, NGOs can share resources based on availability." },
+                ]
+            },
+            Donations: {
+                icon: "fas fa-donate", // Donation icon
+                questions: [
+                    { question: "Can individuals donate funds or resources?", answer: "Yes, individuals can donate through the platform." },
+                    { question: "What can I donate?", answer: "You can donate stationery, medical supplies, and clothes." },
+                    { question: "Are there any fees for using this platform to receive donations?", answer: "No, receiving donations is free for NGOs." }
+                ]
+            },
+            InternationalCollaboration: {
+                icon: "fas fa-globe", // Global collaboration icon
+                questions: [
+                    { question: "How does this platform connect local NGOs with international NGOs?", answer: "It allows NGOs to find partners and share resources globally." },
+                    { question: "Can NGOs from different countries collaborate for resource sharing?", answer: "Yes, NGOs can connect and collaborate across borders." },
+                ]
+            },
+            UserAccounts: {
+                icon: "fas fa-user-cog", // Account management icon
+                questions: [
+                    { question: "How can I be a part of the website?", answer: "You need to register and verify your account." },
+                    { question: "What should I do if I forget my password?", answer: "You can reset your password using the 'Forgot Password' option." },
+                    { question: "How can I update my NGO’s information?", answer: "You can update details in your NGO’s dashboard." }
+                ]
+            },
+        };
+
+        let currentCategory = null;
+
+        function showWelcomeMessage() {
+            const chatBox = document.getElementById("chatBox");
+            chatBox.innerHTML = `
+                <div class="chat-message bot-message">
+                    <p>🤖 Hello, I'm your NGO Chatbot! I can help you learn more about our platform.</p>
+                </div>
+                <div class="chat-message bot-message">
+                    <p> 🤖Let's get started! Please choose a category below to explore.</p>
+                </div>`;
+            showCategories();
+        }
+
+        function showCategories() {
+            const categoriesContainer = document.getElementById("categories");
+            categoriesContainer.innerHTML = '<p style="font-size: 14px; color: #2c5777;">Choose a category:</p>';
+            const categories = Object.keys(faqData);
+            categories.forEach(category => {
+                const button = document.createElement("button");
+                button.classList.add("btn");
+                button.innerHTML = `<i class="${faqData[category].icon}"></i> ${category.replace(/([A-Z])/g, ' $1').trim()}`;
+                button.onclick = () => showQuestions(category);
+                categoriesContainer.appendChild(button);
+            });
+        }
+
+        function showQuestions(category) {
+            currentCategory = category;
+            const chatBox = document.getElementById("chatBox");
+            const categoriesContainer = document.getElementById("categories");
+            chatBox.innerHTML = `
+                <div class="chat-message bot-message">
+                    <p>🤖 Here are some questions about ${category.replace(/([A-Z])/g, ' $1').trim()}:</p>
+                </div>`;
+            
+            faqData[category].questions.forEach(item => {
+                const buttonMessage = document.createElement("div");
+                buttonMessage.classList.add("chat-message", "button-message");
+                buttonMessage.innerHTML = `<i class="fas fa-info-circle"></i> ${item.question}`;
+                buttonMessage.onclick = () => showResponse(item);
+                chatBox.appendChild(buttonMessage);
+            });
+
+            categoriesContainer.innerHTML = '';
+            const backButton = document.createElement("button");
+            backButton.classList.add("btn");
+            backButton.innerHTML = `<i class="fas fa-arrow-left"></i> Back to Categories`;
+            backButton.onclick = () => {
+                showWelcomeMessage();
+            };
+            categoriesContainer.appendChild(backButton);
+        }
+
+        function showResponse(item) {
+            const chatBox = document.getElementById("chatBox");
+            const categoriesContainer = document.getElementById("categories");
+            const userMessage = document.createElement("div");
+            userMessage.classList.add("chat-message", "user-message");
+            userMessage.innerHTML = `${item.question}`; // Removed the question mark icon
+            chatBox.appendChild(userMessage);
+
+            setTimeout(() => {
+                const botMessage = document.createElement("div");
+                botMessage.classList.add("chat-message", "bot-message");
+                botMessage.innerHTML = `<p> 🤖 ${item.answer}</p>`;
+                chatBox.appendChild(botMessage);
+                chatBox.scrollTop = chatBox.scrollHeight;
+
+                setTimeout(() => {
+                    const followUpMessage = document.createElement("div");
+                    followUpMessage.classList.add("chat-message", "button-message");
+                    followUpMessage.innerHTML = `🤖 Would you like to explore another topic? Choose a category or question below.</p>`;
+                    chatBox.appendChild(followUpMessage);
+                    chatBox.scrollTop = chatBox.scrollHeight;
+
+                    categoriesContainer.innerHTML = '';
+                    const backButton = document.createElement("button");
+                    backButton.classList.add("btn");
+                    backButton.innerHTML = `<i class="fas fa-arrow-left"></i> Back to Categories`;
+                    backButton.onclick = () => {
+                        showWelcomeMessage();
+                    };
+                    categoriesContainer.appendChild(backButton);
+
+                    faqData[currentCategory].questions.forEach(item => {
+                        const buttonMessage = document.createElement("div");
+                        buttonMessage.classList.add("chat-message", "button-message");
+                        buttonMessage.innerHTML = `<i class="fas fa-info-circle"></i> ${item.question}`;
+                        buttonMessage.onclick = () => showResponse(item);
+                        chatBox.appendChild(buttonMessage);
+                    });
+                    chatBox.scrollTop = chatBox.scrollHeight;
+                }, 500);
+            }, 500);
+        }
+    </script>
+</body>
+</html>
